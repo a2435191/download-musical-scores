@@ -1,6 +1,5 @@
 package com.github.a2435191.download_musical_scores.filetree;
 
-import com.github.a2435191.download_musical_scores.filetree.URLFileNode;
 import com.github.a2435191.download_musical_scores.reddit.RedditClient;
 import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +10,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 
 /**
  * For the common case in which the filename is known ahead of download time.
@@ -19,6 +17,7 @@ import java.nio.file.Path;
 public class URLFileNodeWithKnownName extends URLFileNode {
 
     private final @NotNull String name;
+
     public URLFileNodeWithKnownName(@NotNull String name, @Nullable URI url) {
         super(url);
         this.name = name;
@@ -33,7 +32,7 @@ public class URLFileNodeWithKnownName extends URLFileNode {
     }
 
     @Override
-    public @NotNull FileInfo download(@NotNull Path targetPath) throws IOException {
+    public @NotNull FileInfo download() throws IOException {
         HttpRequest request = HttpRequest.newBuilder()
             .uri(url)
             .header("User-Agent", RedditClient.USER_AGENT)

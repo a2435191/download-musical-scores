@@ -2,7 +2,6 @@ package com.github.a2435191.download_musical_scores.downloaders.implementations;
 
 import com.github.a2435191.download_musical_scores.downloaders.AbstractDirectLinkFileDownloader;
 import com.github.a2435191.download_musical_scores.filetree.AbstractFileNode;
-import com.github.a2435191.download_musical_scores.filetree.URLFileNode;
 import com.github.a2435191.download_musical_scores.filetree.URLFileNodeWithKnownName;
 import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +13,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
 
-public class WeTransferDownloader extends AbstractDirectLinkFileDownloader {
+public final class WeTransferDownloader extends AbstractDirectLinkFileDownloader {
     private static final String URL_TO_GET_DOWNLOAD_LINK_FORMAT = "https://wetransfer.com/api/v4/transfers/%s/download";
 
     public WeTransferDownloader(int timeoutSeconds) {

@@ -2,7 +2,6 @@ package com.github.a2435191.download_musical_scores.downloaders.implementations;
 
 import com.github.a2435191.download_musical_scores.downloaders.AbstractDirectLinkFileDownloader;
 import com.github.a2435191.download_musical_scores.filetree.AbstractFileNode;
-import com.github.a2435191.download_musical_scores.filetree.URLFileNode;
 import com.github.a2435191.download_musical_scores.filetree.URLFileNodeWithKnownName;
 import com.github.a2435191.download_musical_scores.reddit.RedditClient;
 import com.google.api.client.auth.oauth2.Credential;
@@ -31,7 +30,7 @@ import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.util.Set;
 
-public class GoogleDriveDownloader extends AbstractDirectLinkFileDownloader {
+public final class GoogleDriveDownloader extends AbstractDirectLinkFileDownloader {
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final Set<String> SCOPES = Set.of(DriveScopes.DRIVE_METADATA_READONLY);
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";

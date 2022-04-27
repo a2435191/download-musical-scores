@@ -33,7 +33,7 @@
 | preview.redd.it           | 20        ||
 | wetransfer.com            | 24        | WeTransferDownloader             |
 | mega.nz                   | 71        | MegaDownloader (not implemented) |
-| www.sendspace.com         | 88        | SendspaceDownloader              |
+| www.sendspace.com         | 88        | SendspaceDownloader (buggy mess) |
 | www.dropbox.com           | 93        ||
 | drive.google.com          | 213       | GoogleDriveDownloader            |
 | we.tl                     | 666       | WeTransferDownloader             |

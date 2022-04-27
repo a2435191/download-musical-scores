@@ -1,6 +1,5 @@
 package com.github.a2435191.download_musical_scores.filetree;
 
-import com.github.a2435191.download_musical_scores.reddit.RedditClient;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -8,8 +7,10 @@ import org.jetbrains.annotations.UnmodifiableView;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Represents a mutable node in a tree of files to be downloaded from HTTP
@@ -17,10 +18,7 @@ import java.util.*;
 public abstract class AbstractFileNode {
 
 
-    public record FileInfo(@NotNull InputStream data, @NotNull String name) {}
-
     private final @NotNull List<@NotNull AbstractFileNode> children = new ArrayList<>();
-
     /**
      * Parent node. <code>null</code> if no parent.
      *
@@ -28,8 +26,7 @@ public abstract class AbstractFileNode {
      */
     private @Nullable AbstractFileNode parent;
 
-
-    public abstract @NotNull FileInfo download(@NotNull Path parentDir) throws IOException;
+    public abstract @NotNull FileInfo download() throws IOException;
 
     /**
      * Helper method to determine if this node represents a directory or file.
@@ -48,8 +45,6 @@ public abstract class AbstractFileNode {
     public final boolean isRoot() {
         return parent == null;
     }
-
-
 
     /**
      * Gets the children nodes for <code>this</code>.
@@ -73,12 +68,10 @@ public abstract class AbstractFileNode {
         }
     }
 
-
     public void addChild(@NotNull AbstractFileNode newChild) {
         newChild.parent = this;
         this.children.add(newChild);
     }
-
 
     public @Nullable AbstractFileNode getParent() {
         return parent;
@@ -86,6 +79,9 @@ public abstract class AbstractFileNode {
 
     public void setParent(@Nullable AbstractFileNode parent) {
         this.parent = parent;
+    }
+
+    public record FileInfo(@NotNull InputStream data, @NotNull String name) {
     }
 
 }

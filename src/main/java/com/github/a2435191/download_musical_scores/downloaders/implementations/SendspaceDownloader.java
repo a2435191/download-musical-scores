@@ -2,7 +2,6 @@ package com.github.a2435191.download_musical_scores.downloaders.implementations;
 
 import com.github.a2435191.download_musical_scores.downloaders.AbstractDirectLinkFileDownloader;
 import com.github.a2435191.download_musical_scores.filetree.AbstractFileNode;
-import com.github.a2435191.download_musical_scores.filetree.URLFileNode;
 import com.github.a2435191.download_musical_scores.filetree.URLFileNodeWithKnownName;
 import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Map;
 
-public class SendspaceDownloader extends AbstractDirectLinkFileDownloader {
+public final class SendspaceDownloader extends AbstractDirectLinkFileDownloader {
 
     private static final String SENDSPACE_API_VERSION = "1.2";
     private @Nullable String sessionToken = null;
