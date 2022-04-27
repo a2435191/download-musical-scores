@@ -1,16 +1,9 @@
 package com.github.a2435191.download_musical_scores.filetree;
 
-import com.github.a2435191.download_musical_scores.reddit.RedditClient;
-import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.file.Path;
 
 public abstract class URLFileNode extends AbstractFileNode {
 
