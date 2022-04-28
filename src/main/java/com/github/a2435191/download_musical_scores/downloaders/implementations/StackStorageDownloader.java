@@ -4,9 +4,11 @@ import com.github.a2435191.download_musical_scores.downloaders.AbstractDirectLin
 import com.github.a2435191.download_musical_scores.filetree.AbstractFileNode;
 import com.github.a2435191.download_musical_scores.filetree.URLFileNode;
 import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
+import com.github.a2435191.download_musical_scores.util.NoSuchElementException;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public final class StackStorageDownloader extends AbstractDirectLinkFileDownloader {
@@ -66,9 +69,18 @@ public final class StackStorageDownloader extends AbstractDirectLinkFileDownload
 
 
         Document document = Jsoup.parse(htmlResponse.body());
-        String csrfToken = document.head().selectFirst("meta[name='csrf-token']").attr("content");
-        String stackShareSession = getCookiesFromString(
-            htmlResponse.headers().firstValue("Set-Cookie").get())
+
+        Element csrfTokenElement = document.head().selectFirst("meta[name='csrf-token']");
+        if (csrfTokenElement == null) {
+            throw new NoSuchElementException("csrf-token");
+        }
+        String csrfToken = csrfTokenElement.attr("content");
+
+        Optional<String> stackShareSessionCookieString = htmlResponse.headers().firstValue("Set-Cookie");
+        if (stackShareSessionCookieString.isEmpty()) {
+            throw new NoSuchElementException("Set-Cookie header");
+        }
+        String stackShareSession = getCookiesFromString(stackShareSessionCookieString.get())
             .get("stackShareSession");
 
 
@@ -100,13 +112,14 @@ public final class StackStorageDownloader extends AbstractDirectLinkFileDownload
 
                 BadRequestStatusException.raiseOnStatus(response);
 
-                String fileName = getCookiesFromString(
-                    response.headers()
-                        .firstValue("Content-Disposition")
-                        .get()
-                )
-                    .get("filename");
+                Optional<String> contentDisposition = response.headers()
+                    .firstValue("Content-Disposition");
 
+                if (contentDisposition.isEmpty()) {
+                    throw new NoSuchElementException("Content-Disposition header");
+                }
+
+                String fileName = getCookiesFromString(contentDisposition.get()).get("filename");
 
                 return new FileInfo(response.body(), fileName);
             }
