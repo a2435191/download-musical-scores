@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import java.net.URI;
 import java.net.http.HttpClient;
 
-public abstract class URLFileNode extends AbstractFileNode {
+public abstract class URLFileNode extends AbstractFileNodeStreamDownloader {
 
     /**
      * Client to make HTTP requests with

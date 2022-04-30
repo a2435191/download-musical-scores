@@ -26,7 +26,7 @@
 | youtube.com               | 2         ||
 | www.youtube.com           | 3         ||
 | www.reddit.com            | 5         ||
-| riemer46.stackstorage.com | 5         ||
+| riemer46.stackstorage.com | 5         | StackStorageDownloader           |
 | www.mediafire.com         | 12        ||
 | 1drv.ms                   | 18        ||
 | dropover.cloud            | 18        ||

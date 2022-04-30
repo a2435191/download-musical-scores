@@ -7,6 +7,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,7 +27,14 @@ public abstract class AbstractFileNode {
      */
     private @Nullable AbstractFileNode parent;
 
-    public abstract @NotNull FileInfo download() throws IOException;
+    /**
+     * Download the file if this is a file; otherwise, create a folder.
+     *
+     * @param parentDir The parent directory absolute path where downloading/creating should occur.
+     * @return The absolute path of where the file/folder was downloaded/created.
+     * @throws IOException if the download fails
+     */
+    public abstract @NotNull Path saveToDisk(@NotNull Path parentDir) throws IOException;
 
     /**
      * Helper method to determine if this node represents a directory or file.
