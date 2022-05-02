@@ -11,9 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -40,7 +38,7 @@ public class SubredditStream {
     private Long beforeTimestamp = null;
     private boolean isDone = false;
 
-    private static @NotNull URI createUriWithQueryParams(@NotNull String urlBase, @NotNull Map<String, String> params) {
+    private static @NotNull URI createUriWithQueryParams(@SuppressWarnings("SameParameterValue") @NotNull String urlBase, @NotNull Map<String, String> params) {
         String url = urlBase + "?" + params
             .entrySet()
             .stream()
@@ -87,13 +85,13 @@ public class SubredditStream {
     }
 
     /**
-     * Calls {@link #getNextPostData(int, int)} with arguments <code>50</code> <code>60</code>.
+     * Calls {@link #getNextPostData(int, int, Collection)} with arguments <code>50</code> <code>60</code> <code>Map.of()</code>.
      *
      * @return Array of {@link RedditPostInfo} instances representing Reddit posts in time-decreasing order.
      * @throws BadRequestStatusException if a request's status code is not <code>200</code>
      */
     public RedditPostInfo[] getNextPostData() throws BadRequestStatusException {
-        return getNextPostData(50, 60);
+        return getNextPostData(50, 60, List.of());
     }
 
     private @NotNull HttpResponse<String> makeRequest(int maxBatchSize, int timeoutSeconds) throws BadRequestStatusException {
@@ -137,7 +135,7 @@ public class SubredditStream {
      * @throws BadRequestStatusException if a request's status code is not <code>200</code>.
      *                                   In this case, the state is not advanced.
      */
-    public RedditPostInfo[] getNextPostData(int maxBatchSize, int timeoutSeconds) throws BadRequestStatusException {
+    public RedditPostInfo[] getNextPostData(int maxBatchSize, int timeoutSeconds, Collection<String> otherKeys) throws BadRequestStatusException {
         HttpResponse<String> response = this.makeRequest(maxBatchSize, timeoutSeconds);
         JSONArray data = new JSONObject(response.body()).getJSONArray("data");
 
@@ -151,9 +149,12 @@ public class SubredditStream {
                 String id = postData.getString("id");
                 long timestamp = postData.getInt("created_utc");
 
+                Map<String, Object> otherData = otherKeys.stream()
+                                                             .filter(postData::has)
+                                                .collect(Collectors.toMap(k -> k, postData::get));
                 infoArrayList.add(
                     new RedditPostInfo(
-                        id, timestamp, url, URLTextExtractor.extractURLsFromRedditPost(postData)
+                        id, timestamp, url, URLTextExtractor.extractURLsFromRedditPost(postData), otherData
                     )
                 );
             }

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Represents a subset of information contained in a Reddit post's metadata.
@@ -17,16 +19,24 @@ import java.util.Arrays;
  * @param scoreURLs     Score URLs extracted from the post.
  *                      See {@link URLTextExtractor#extractURLsFromRedditPost(JSONObject, boolean)}.
  */
-public record RedditPostInfo(String id, long timestamp, String redditURLPath, String[] scoreURLs) {
+public record RedditPostInfo(String id, long timestamp, String redditURLPath, String[] scoreURLs, Map<String, ?> otherData) {
 
     @Contract(pure = true)
     @Override
     public @NotNull String toString() {
+        String otherData = this.otherData.entrySet().stream()
+                               .map(pair -> pair.getKey() + "=" + pair.getValue())
+                               .collect(Collectors.joining(","));
         return "RedditPostInfo{" +
                    "id='" + id + '\'' +
                    ", timestamp=" + timestamp +
                    ", redditURLPath='" + redditURLPath + '\'' +
                    ", scoreURLs=" + Arrays.toString(scoreURLs) +
+                   ", " + otherData +
                    '}';
+    }
+
+    public RedditPostInfo(String id, long timestamp, String redditURLPath, String[] scoreURLs) {
+        this(id, timestamp, redditURLPath, scoreURLs, Map.of());
     }
 }
