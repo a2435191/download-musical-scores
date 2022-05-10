@@ -35,8 +35,18 @@ public class SubredditStream {
     };
 
     private final HttpClient client = HttpClient.newHttpClient();
+    private final @NotNull Map<@NotNull String, @NotNull String> baseQuery;
     private Long beforeTimestamp = null;
     private boolean isDone = false;
+
+    public SubredditStream() {
+        this.baseQuery = Map.of("title:not", "request");
+    }
+
+
+    public SubredditStream(@NotNull Map<@NotNull String, @NotNull String> query) {
+        this.baseQuery = query;
+    }
 
     private static @NotNull URI createUriWithQueryParams(@SuppressWarnings("SameParameterValue") @NotNull String urlBase, @NotNull Map<String, String> params) {
         String url = urlBase + "?" + params
@@ -46,7 +56,6 @@ public class SubredditStream {
             .collect(Collectors.joining("&"));
         return URI.create(url);
     }
-
 
     private static boolean jsonDataIsValid(JSONObject data) {
         for (String fieldName : FIELDS) {
@@ -65,7 +74,6 @@ public class SubredditStream {
                    && !data.getString("title").toUpperCase().contains(OPT_OUT_STRING)
                    && !data.optString("selftext").toUpperCase().contains(OPT_OUT_STRING);
     }
-
 
     /**
      * Convenience method for if this instance is exhausted.
@@ -95,18 +103,18 @@ public class SubredditStream {
     }
 
     private @NotNull HttpResponse<String> makeRequest(int maxBatchSize, int timeoutSeconds) throws BadRequestStatusException {
-        Map<String, String> queryParams = new HashMap<>(Map.of(
+        Map<String, String> query = new HashMap<>(Map.of(
             "subreddit", SUBREDDIT,
             "fields", String.join(",", FIELDS),
-            "title:not", "request",
             "size", "" + maxBatchSize
         ));
 
         if (beforeTimestamp != null) {
-            queryParams.put("before", "" + beforeTimestamp);
+            query.put("before", "" + beforeTimestamp);
         }
+        query.putAll(this.baseQuery);
 
-        final URI target = createUriWithQueryParams(PUSHSHIFT_URL, queryParams);
+        final URI target = createUriWithQueryParams(PUSHSHIFT_URL, query);
 
         final HttpRequest request = HttpRequest.newBuilder()
             .uri(target)
@@ -147,14 +155,15 @@ public class SubredditStream {
             if (jsonDataIsValid(postData)) {
                 String url = postData.getString("permalink");
                 String id = postData.getString("id");
+                String title = postData.getString("title");
                 long timestamp = postData.getInt("created_utc");
 
                 Map<String, Object> otherData = otherKeys.stream()
-                                                             .filter(postData::has)
-                                                .collect(Collectors.toMap(k -> k, postData::get));
+                    .filter(postData::has)
+                    .collect(Collectors.toMap(k -> k, postData::get));
                 infoArrayList.add(
                     new RedditPostInfo(
-                        id, timestamp, url, URLTextExtractor.extractURLsFromRedditPost(postData), otherData
+                        id, timestamp, url, title, URLTextExtractor.extractURLsFromRedditPost(postData), otherData
                     )
                 );
             }

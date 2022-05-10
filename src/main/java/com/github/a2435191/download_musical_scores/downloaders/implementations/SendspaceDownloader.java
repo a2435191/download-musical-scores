@@ -21,6 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Map;
 
+
 public final class SendspaceDownloader extends AbstractDirectLinkFileDownloader {
 
     private static final String SENDSPACE_API_VERSION = "1.2";
@@ -66,6 +67,7 @@ public final class SendspaceDownloader extends AbstractDirectLinkFileDownloader 
             "api_version", SENDSPACE_API_VERSION
         ));
         this.sessionToken = result.getElementsByTag("token").get(0).text();
+
         return this;
     }
 
@@ -92,7 +94,7 @@ public final class SendspaceDownloader extends AbstractDirectLinkFileDownloader 
         Element result = this.request("download.getInfo", Map.of(
             "session_key", this.sessionKey,
             "file_id", url
-        )); // fails for some reason FIXME
+        )); // fails without premium account
 
         Element download = result.getElementsByTag("download").get(0);
 

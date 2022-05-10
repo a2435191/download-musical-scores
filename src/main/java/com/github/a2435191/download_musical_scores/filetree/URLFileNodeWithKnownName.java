@@ -24,7 +24,8 @@ public class URLFileNodeWithKnownName extends URLFileNode {
     }
 
     public URLFileNodeWithKnownName(@NotNull String name, @Nullable String url) {
-        this(name, URI.create(url));
+        super(url);
+        this.name = name;
     }
 
     public URLFileNodeWithKnownName(@NotNull String name) {
@@ -33,6 +34,9 @@ public class URLFileNodeWithKnownName extends URLFileNode {
 
     @Override
     public @NotNull FileInfo download() throws IOException {
+        if (this.isDirectory()) {
+            return new FileInfo(InputStream.nullInputStream(), this.name);
+        }
         HttpRequest request = HttpRequest.newBuilder()
             .uri(url)
             .header("User-Agent", RedditClient.USER_AGENT)

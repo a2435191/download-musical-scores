@@ -2,7 +2,7 @@ package com.github.a2435191.download_musical_scores.downloaders.implementations;
 
 import com.github.a2435191.download_musical_scores.downloaders.AbstractDirectLinkFileDownloader;
 import com.github.a2435191.download_musical_scores.filetree.AbstractFileNode;
-import com.github.a2435191.download_musical_scores.filetree.URLFileNode;
+import com.github.a2435191.download_musical_scores.filetree.AbstractFileNodeStreamDownloader;
 import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
 import com.github.a2435191.download_musical_scores.util.NoSuchElementException;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -94,7 +95,9 @@ public final class StackStorageDownloader extends AbstractDirectLinkFileDownload
         String downloadID = URI.create(url).getPath().split("/")[2]; // because [0] is ""
         String directDownloadURL = "https://riemer46.stackstorage.com/public-share/" + downloadID + "/download/";
 
-        return new URLFileNode() {
+        final HttpClient client = HttpClient.newHttpClient();
+        return new AbstractFileNodeStreamDownloader() {
+
             @Override
             public @NotNull FileInfo download() throws IOException {
 
@@ -104,7 +107,7 @@ public final class StackStorageDownloader extends AbstractDirectLinkFileDownload
                     .header("Cookie", "stackShareSession=" + stackShareSession)
                     .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
                     .build();
-                HttpResponse<InputStream> response = this.client.sendAsync(
+                HttpResponse<InputStream> response = client.sendAsync(
                         directDownloadRequest,
                         HttpResponse.BodyHandlers.ofInputStream()
                     )

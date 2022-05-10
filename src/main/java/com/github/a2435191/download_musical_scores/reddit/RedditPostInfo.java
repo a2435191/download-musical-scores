@@ -19,24 +19,26 @@ import java.util.stream.Collectors;
  * @param scoreURLs     Score URLs extracted from the post.
  *                      See {@link URLTextExtractor#extractURLsFromRedditPost(JSONObject, boolean)}.
  */
-public record RedditPostInfo(String id, long timestamp, String redditURLPath, String[] scoreURLs, Map<String, ?> otherData) {
+public record RedditPostInfo(String id, long timestamp, String redditURLPath, String title, String[] scoreURLs,
+                             Map<String, ?> otherData) {
+
+    public RedditPostInfo(String id, long timestamp, String redditURLPath, String title, String[] scoreURLs) {
+        this(id, timestamp, redditURLPath, title, scoreURLs, Map.of());
+    }
 
     @Contract(pure = true)
     @Override
     public @NotNull String toString() {
         String otherData = this.otherData.entrySet().stream()
-                               .map(pair -> pair.getKey() + "=" + pair.getValue())
-                               .collect(Collectors.joining(","));
+            .map(pair -> pair.getKey() + "=" + pair.getValue())
+            .collect(Collectors.joining(","));
         return "RedditPostInfo{" +
                    "id='" + id + '\'' +
                    ", timestamp=" + timestamp +
                    ", redditURLPath='" + redditURLPath + '\'' +
+                   ", title='" + title + '\'' +
                    ", scoreURLs=" + Arrays.toString(scoreURLs) +
                    ", " + otherData +
                    '}';
-    }
-
-    public RedditPostInfo(String id, long timestamp, String redditURLPath, String[] scoreURLs) {
-        this(id, timestamp, redditURLPath, scoreURLs, Map.of());
     }
 }

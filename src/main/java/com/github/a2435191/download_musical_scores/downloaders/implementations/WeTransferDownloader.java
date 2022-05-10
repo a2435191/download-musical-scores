@@ -28,8 +28,9 @@ public final class WeTransferDownloader extends AbstractDirectLinkFileDownloader
         HttpRequest initialRequest = HttpRequest.newBuilder()
             .uri(URI.create(url))
             .build();
+        System.out.println("sending");
         HttpResponse<Void> response = client.sendAsync(initialRequest, HttpResponse.BodyHandlers.discarding()).join();
-
+        System.out.println("sent");
         BadRequestStatusException.raiseOnStatus(response);
 
         String[] pathFragments = response.uri().getPath().split("/");
@@ -50,11 +51,13 @@ public final class WeTransferDownloader extends AbstractDirectLinkFileDownloader
             .POST(HttpRequest.BodyPublishers.ofString(postData))
             .build();
 
+
         HttpResponse<String> downloadLinkResponse = client.sendAsync(
                 downloadLinkRequest,
                 HttpResponse.BodyHandlers.ofString()
             )
             .join();
+
 
 
         BadRequestStatusException.raiseOnStatus(downloadLinkResponse);
