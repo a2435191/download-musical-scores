@@ -18,10 +18,11 @@ public final class FileUtils {
         stack.add(folder);
 
         while (!stack.isEmpty()) {
+            // TODO: symlinks?
             File next = stack.peek();
             File[] children = next.listFiles();
 
-            if (next.isFile() || (children != null && children.length == 0)) { // file or empty folder
+            if (next.isFile() || (next.isDirectory() && children != null && children.length == 0)) { // file or empty folder
                 try {
                     Files.deleteIfExists(next.toPath());
                 } catch (IOException e) {
@@ -30,6 +31,8 @@ public final class FileUtils {
                 stack.pop();
             } else if (children != null) { // non-empty folder
                 stack.addAll(Arrays.asList(children));
+            } else {
+                stack.pop();
             }
         }
 
