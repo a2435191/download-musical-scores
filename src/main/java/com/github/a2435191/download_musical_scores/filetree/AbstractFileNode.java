@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,9 +29,12 @@ public abstract class AbstractFileNode {
     /**
      * Download the file if this is a file; otherwise, create a folder.
      *
-     * @param parentDir The parent directory absolute path where downloading/creating should occur.
-     * @return The absolute path of where the file/folder was downloaded/created.
+     * @param parentDir The parent directory absolute downloadDir where downloading/creating should occur, URL-escaped.
+     *                  Does <b>not</b> create this directory automatically.
+     * @return The absolute downloadDir of where the file/folder was downloaded/created.
      * @throws IOException if the download fails
+     * @apiNote This does <b>not</b> take into account the structure of the tree!
+     * A FileNode representing a/b/c.txt calling saveToDisk in folder d will write d/c.txt, not d/a/b/c.txt!
      */
     public abstract @NotNull Path saveToDisk(@NotNull Path parentDir) throws IOException;
 
@@ -87,9 +89,6 @@ public abstract class AbstractFileNode {
 
     public void setParent(@Nullable AbstractFileNode parent) {
         this.parent = parent;
-    }
-
-    public record FileInfo(@NotNull InputStream data, @NotNull String name) {
     }
 
 }

@@ -59,7 +59,6 @@ public final class WeTransferDownloader extends AbstractDirectLinkFileDownloader
             .join();
 
 
-
         BadRequestStatusException.raiseOnStatus(downloadLinkResponse);
 
         String directDownloadLink = new JSONObject(downloadLinkResponse.body()).getString("direct_link");

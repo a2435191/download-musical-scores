@@ -33,25 +33,18 @@ public class MusicalScoresDownloader {
     }
 
     public void download(@NotNull String url, @NotNull Path parentDir) throws IOException {
-        System.out.println("here with " + url + " and " + parentDir);
         final AbstractFileDownloader downloader = this.manager.getInstanceFromUrl(URI.create(url));
 
-        System.out.println("got url");
         if (downloader == null) {
             throw new RuntimeException("no downloader found for url " + url + "!");
         }
 
 
-        System.out.println("before root");
-        System.out.println(downloader.hashCode());
-
         AbstractFileNode root = downloader.getFileTreeRoot(url);
-        System.out.println("getting file tree root");
         Stack<NodeAndPath> stack = new Stack<>();
         stack.add(new NodeAndPath(root, parentDir));
 
         while (!stack.isEmpty()) {
-            System.out.println(stack);
             NodeAndPath nodeAndDownloadDir = stack.pop();
 
 
