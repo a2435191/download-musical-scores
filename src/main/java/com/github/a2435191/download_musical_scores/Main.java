@@ -9,9 +9,11 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class Main {
@@ -51,46 +53,46 @@ public final class Main {
             .flatMap(Stream::of).limit(50);
 
         Stream<@NotNull CompletableFuture<Void>> futures = infoStream.map(info -> {
-            List<CompletableFuture<Void>> tmpFutures = new ArrayList<>();
-            for (String url : info.scoreURLs()) {
-                String escapedTitle = info.title().replace("/", "|");
-                if (escapedTitle.toUpperCase().startsWith(SUBMISSION_PREFIX)) {
-                    escapedTitle = escapedTitle
-                        .substring(SUBMISSION_PREFIX.length())
-                        .stripLeading();
-                }
-
-                Path targetPath = DOWNLOAD_DIR.resolve(escapedTitle);
-
-
-                System.out.println("downloading " + url);
-                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                    try {
-                        System.out.println("Downloading url " + url);
-                        downloader.download(url, targetPath);
-                        System.out.println(url + " done at " + targetPath);
-                    } catch (FileAlreadyExistsException e) {
-                        e.printStackTrace(System.err);
-                    } catch (IOException | RuntimeException e) {
-                        StringBuilder builder = new StringBuilder("error downloading " + url + ": \n");
-                        for (StackTraceElement elem : e.getStackTrace()) {
-                            builder.append(elem.toString());
-                        }
-                        String stackTrace = builder.toString();
-
-                        System.err.println(stackTrace);
-                        //e.printStackTrace(System.err);
-                        FileUtils.delete(targetPath.toFile());
-                        return;
+                List<CompletableFuture<Void>> tmpFutures = new ArrayList<>();
+                for (String url : info.scoreURLs()) {
+                    String escapedTitle = info.title().replace("/", "|");
+                    if (escapedTitle.toUpperCase().startsWith(SUBMISSION_PREFIX)) {
+                        escapedTitle = escapedTitle
+                            .substring(SUBMISSION_PREFIX.length())
+                            .stripLeading();
                     }
-                    System.out.println("done!");
 
-                });
-                tmpFutures.add(future);
-            }
-            return tmpFutures;
-        })
-        .flatMap(Collection::stream);
+                    Path targetPath = DOWNLOAD_DIR.resolve(escapedTitle);
+
+
+                    System.out.println("downloading " + url);
+                    CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                        try {
+                            System.out.println("Downloading url " + url);
+                            downloader.download(url, targetPath);
+                            System.out.println(url + " done at " + targetPath);
+                        } catch (FileAlreadyExistsException e) {
+                            e.printStackTrace(System.err);
+                        } catch (IOException | RuntimeException e) {
+                            StringBuilder builder = new StringBuilder("error downloading " + url + ": \n");
+                            for (StackTraceElement elem : e.getStackTrace()) {
+                                builder.append(elem.toString());
+                            }
+                            String stackTrace = builder.toString();
+
+                            System.err.println(stackTrace);
+                            //e.printStackTrace(System.err);
+                            FileUtils.delete(targetPath.toFile());
+                            return;
+                        }
+                        System.out.println("done!");
+
+                    });
+                    tmpFutures.add(future);
+                }
+                return tmpFutures;
+            })
+            .flatMap(Collection::stream);
 
 
         List<@NotNull CompletableFuture<Void>> futuresList = futures.toList();
@@ -103,8 +105,6 @@ public final class Main {
     public static void main(String[] args) {
         downloadAll();
     }
-
-
 
 
 }
