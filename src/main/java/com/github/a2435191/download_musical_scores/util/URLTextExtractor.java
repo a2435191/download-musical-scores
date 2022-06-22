@@ -9,7 +9,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.a2435191.download_musical_scores.reddit.SubredditStream.SUBREDDIT;
 
 @SuppressWarnings({"RegExpRedundantEscape", "RegExpUnnecessaryNonCapturingGroup"})
 public class URLTextExtractor {
@@ -50,10 +49,10 @@ public class URLTextExtractor {
      *             and either <code>url</code> string or <code>selftext</code> string.
      * @return Array of URLs, guaranteed to be valid according to {@link UrlValidator#isValid(String)}
      * @throws BadRequestStatusException if HTTP status is non-<code>200</code>
-     * @see URLTextExtractor#extractURLsFromRedditPost(JSONObject, boolean)
+     * @see URLTextExtractor#extractURLsFromRedditPost(JSONObject, String, boolean)
      */
-    public static String @NotNull [] extractURLsFromRedditPost(@NotNull JSONObject data) throws BadRequestStatusException {
-        return extractURLsFromRedditPost(data, false);
+    public static String @NotNull [] extractURLsFromRedditPost(@NotNull JSONObject data, @NotNull String subredditName) throws BadRequestStatusException {
+        return extractURLsFromRedditPost(data, subredditName, false);
     }
 
     /**
@@ -68,10 +67,10 @@ public class URLTextExtractor {
      *                                as a last resort.
      * @return Array of URLs, guaranteed to be valid according to {@link UrlValidator#isValid(String)}
      * @throws BadRequestStatusException if HTTP status is non-<code>200</code>
-     * @see URLTextExtractor#extractURLsFromRedditPost(JSONObject, boolean)
+     * @see URLTextExtractor#extractURLsFromRedditPost(JSONObject, String, boolean)
      */
-    public static String @NotNull [] extractURLsFromRedditPost(@NotNull JSONObject data, boolean alwaysGetHTMLFromReddit) throws BadRequestStatusException {
-        Set<@NotNull String> unfiltered = extractURLsFromRedditPostNoFilter(data, alwaysGetHTMLFromReddit);
+    public static String @NotNull [] extractURLsFromRedditPost(@NotNull JSONObject data, @NotNull String subredditName, boolean alwaysGetHTMLFromReddit) throws BadRequestStatusException {
+        Set<@NotNull String> unfiltered = extractURLsFromRedditPostNoFilter(data, subredditName, alwaysGetHTMLFromReddit);
         return removeInvalidURLS(unfiltered).toArray(new String[0]);
     }
 
@@ -92,7 +91,11 @@ public class URLTextExtractor {
         return out;
     }
 
-    private static Set<@NotNull String> extractURLsFromRedditPostNoFilter(@NotNull JSONObject data, boolean alwaysGetHTMLFromReddit) throws BadRequestStatusException {
+    private static Set<@NotNull String> extractURLsFromRedditPostNoFilter(
+        @NotNull JSONObject data,
+        @NotNull String subredditName,
+        boolean alwaysGetHTMLFromReddit
+    ) throws BadRequestStatusException {
         if (data.getBoolean("is_self")) //noinspection DanglingJavadoc
         {
             /**
@@ -129,7 +132,7 @@ public class URLTextExtractor {
             if (out.isEmpty() || alwaysGetHTMLFromReddit) {
                 // Otherwise, if PushShift data isn't enough, query the html via Reddit.
                 // One issue with this is that deleted posts come up empty.
-                String html = RedditClient.getPostHTML(data.getString("id"), SUBREDDIT);
+                String html = RedditClient.getPostHTML(data.getString("id"), subredditName);
                 Matcher matcher = HTML_URL_REGEX.matcher(html);
 
                 while (matcher.find()) {

@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
  * Stream {@link RedditPostInfo} data from the PushShift API.
  */
 public class SubredditStream {
-    public final static String SUBREDDIT = "MusicalScores";
     private static final String USER_AGENT = "r/MusicalScores Downloader by u/2435191";
     private static final String PUSHSHIFT_URL = "https://api.pushshift.io/reddit/search/submission";
     private static final String OPT_OUT_STRING = "!BotOptOut".toUpperCase();
@@ -36,16 +35,18 @@ public class SubredditStream {
 
     private final HttpClient client = HttpClient.newHttpClient();
     private final @NotNull Map<@NotNull String, @NotNull String> baseQuery;
+    private final @NotNull String subredditName;
     private Long beforeTimestamp = null;
     private boolean isDone = false;
 
-    public SubredditStream() {
-        this.baseQuery = Map.of("title:not", "request");
+    public SubredditStream(@NotNull String subredditName) {
+        this(Map.of("title:not", "request"), subredditName);
     }
 
 
-    public SubredditStream(@NotNull Map<@NotNull String, @NotNull String> query) {
+    public SubredditStream(@NotNull Map<@NotNull String, @NotNull String> query, @NotNull String subredditName) {
         this.baseQuery = query;
+        this.subredditName = subredditName;
     }
 
     private static @NotNull URI createUriWithQueryParams(@SuppressWarnings("SameParameterValue") @NotNull String urlBase, @NotNull Map<String, String> params) {
@@ -104,7 +105,7 @@ public class SubredditStream {
 
     private @NotNull HttpResponse<String> makeRequest(int maxBatchSize, int timeoutSeconds) throws BadRequestStatusException {
         Map<String, String> query = new HashMap<>(Map.of(
-            "subreddit", SUBREDDIT,
+            "subreddit", this.subredditName,
             "fields", String.join(",", FIELDS),
             "size", "" + maxBatchSize
         ));
@@ -163,7 +164,7 @@ public class SubredditStream {
                     .collect(Collectors.toMap(k -> k, postData::get));
                 infoArrayList.add(
                     new RedditPostInfo(
-                        id, timestamp, url, title, URLTextExtractor.extractURLsFromRedditPost(postData), otherData
+                        id, timestamp, url, title, URLTextExtractor.extractURLsFromRedditPost(postData, this.subredditName), otherData
                     )
                 );
             }
