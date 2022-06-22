@@ -28,9 +28,9 @@ public final class WeTransferDownloader extends AbstractDirectLinkFileDownloader
         HttpRequest initialRequest = HttpRequest.newBuilder()
             .uri(URI.create(url))
             .build();
-        System.out.println("sending");
+
         HttpResponse<Void> response = client.sendAsync(initialRequest, HttpResponse.BodyHandlers.discarding()).join();
-        System.out.println("sent");
+
         BadRequestStatusException.raiseOnStatus(response);
 
         String[] pathFragments = response.uri().getPath().split("/");
