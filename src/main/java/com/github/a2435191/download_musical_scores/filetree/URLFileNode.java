@@ -10,7 +10,9 @@ public abstract class URLFileNode extends AbstractFileNodeStreamDownloader {
     /**
      * Client to make HTTP requests with
      */
-    protected final HttpClient client = HttpClient.newHttpClient();
+    protected final HttpClient client = HttpClient.newBuilder()
+        .followRedirects(HttpClient.Redirect.ALWAYS)
+        .build();
 
 
     protected final @Nullable URI url;
