@@ -32,8 +32,8 @@
 | dropover.cloud            | 18        ||
 | preview.redd.it           | 20        ||
 | wetransfer.com            | 24        | WeTransferDownloader             |
-| mega.nz                   | 71        | MegaDownloader (not implemented) |
+| mega.nz                   | 71        | MegaDownloader                   |
 | www.sendspace.com         | 88        | SendspaceDownloader (buggy mess) |
-| www.dropbox.com           | 93        ||
+| www.dropbox.com           | 93        | DropboxDownloader                |
 | drive.google.com          | 213       | GoogleDriveDownloader            |
 | we.tl                     | 666       | WeTransferDownloader             |
