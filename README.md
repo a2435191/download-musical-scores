@@ -18,3 +18,4 @@ Then the scores are all batch-downloaded to a directory specified by the user. I
 * Upload directly to Google Drive/Dropbox instead of to local storage
 * Write a CLI
 * Create a GUI
+* Add more documentation to Java code
