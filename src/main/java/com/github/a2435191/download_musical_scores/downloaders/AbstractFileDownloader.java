@@ -78,6 +78,18 @@ public abstract class AbstractFileDownloader {
             return this;
         }
 
+        @Contract(value = "-> this", mutates = "this")
+        public @NotNull DownloaderManager addDropboxDownloader() {
+            this.put(() -> {
+                try {
+                    return new DropboxDownloader();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }, "1drv.ms", "dropbox.com");
+            return this;
+        }
+
         @Contract(pure = true)
         public @Nullable AbstractFileDownloader getInstanceFromUrl(@NotNull URI url) {
             String host = url.getHost().toLowerCase(Locale.ROOT);

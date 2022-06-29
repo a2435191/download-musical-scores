@@ -22,7 +22,8 @@ public class MusicalScoresDownloader {
                 .addWeTransferDownloader(60)
                 .addStackStorageDownloader(60)
                 .addGoogleDriveDownloader(60)
-                .addMegaDownloader();
+                .addMegaDownloader()
+                .addDropboxDownloader();
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -53,7 +54,7 @@ public class MusicalScoresDownloader {
             }
             Path downloadPath = nodeAndDownloadDir.node.saveToDisk(nodeAndDownloadDir.downloadDir);
             for (AbstractFileNode child : nodeAndDownloadDir.node.getChildren()) {
-                stack.add(new NodeAndPath(child, nodeAndDownloadDir.downloadDir));
+                stack.add(new NodeAndPath(child, downloadPath));
             }
         }
     }
