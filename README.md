@@ -13,11 +13,15 @@ See [this](src/main/java/com/github/a2435191/download_musical_scores/downloaders
 
 Then the scores are all batch-downloaded to a directory specified by the user. It also includes an API for more complicated tasks.
 
+## Where can I download the files?
+You'll find the files in the [downloads](downloads) folder, but I might delete/alter it significanlty during testing!
+
 ## TODO
 
 * Complete more download interfaces
 * Keep fixing bugs
 * Unit tests
+* Don't overwrite files, .csv record of already downloaded files, user configs
 * Upload directly to Google Drive/Dropbox instead of to local storage
 * Write a CLI
 * Create a GUI
