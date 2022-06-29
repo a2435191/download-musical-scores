@@ -2,9 +2,7 @@ package com.github.a2435191.download_musical_scores.util;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -68,6 +66,22 @@ public final class FileUtils {
         }
 
 
+    }
+
+    public static void serialize(Object obj, @NotNull File file)
+        throws IOException
+    {
+        try (FileOutputStream fos = new FileOutputStream(file);
+             ObjectOutputStream out = new ObjectOutputStream(fos)) {
+            out.writeObject(obj);
+        }
+    }
+
+    public static Object deserialize(@NotNull File file) throws IOException, ClassNotFoundException {
+        try (FileInputStream fis = new FileInputStream(file);
+             ObjectInputStream in = new ObjectInputStream(fis)) {
+            return in.readObject();
+        }
     }
 
     @FunctionalInterface
