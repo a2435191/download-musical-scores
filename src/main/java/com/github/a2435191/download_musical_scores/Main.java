@@ -1,17 +1,21 @@
 package com.github.a2435191.download_musical_scores;
 
 
+import com.github.a2435191.download_musical_scores.downloaders.implementations.DropboxDownloader;
+import com.github.a2435191.download_musical_scores.downloaders.implementations.GoogleDriveDownloader;
 import com.github.a2435191.download_musical_scores.reddit.RedditPostInfo;
 import com.github.a2435191.download_musical_scores.reddit.SubredditStream;
 import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
 import com.github.a2435191.download_musical_scores.util.FileUtils;
 import com.github.a2435191.download_musical_scores.util.JobsQueue;
+import com.google.api.client.auth.oauth2.StoredCredential;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -83,7 +87,7 @@ public final class Main {
         }
     }
 
-    private static void downloadAll(boolean zip, @NotNull String subredditName, Path downloadDir) {
+    public static void downloadAll(boolean zip, @NotNull String subredditName, Path downloadDir) {
         MusicalScoresDownloader downloader = new MusicalScoresDownloader();
         SubredditStream stream = new SubredditStream(subredditName);
 
@@ -112,7 +116,7 @@ public final class Main {
             for (String url : info.scoreURLs()) {
                 Path targetPath = downloadDir.resolve(escapedTitle);
 
-                System.out.println("downloading " + url);
+                System.out.println("downloading " + info.title() + " at " + url);
                 Supplier<CompletableFuture<Void>> futureSupplier = () -> {
                     CompletableFuture<Void> future = CompletableFuture.runAsync(
                         () -> download(downloader, url, targetPath)
@@ -129,6 +133,7 @@ public final class Main {
         queue.joinAll();
 
     }
+
 
 
     public static void main(String[] args) throws Throwable {
