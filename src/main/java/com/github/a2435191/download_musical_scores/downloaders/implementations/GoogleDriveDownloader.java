@@ -4,7 +4,9 @@ import com.github.a2435191.download_musical_scores.downloaders.AbstractDirectLin
 import com.github.a2435191.download_musical_scores.filetree.AbstractFileNode;
 import com.github.a2435191.download_musical_scores.filetree.URLFileNodeWithKnownName;
 import com.github.a2435191.download_musical_scores.reddit.RedditClient;
+import com.github.a2435191.download_musical_scores.util.FileUtils;
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -27,7 +29,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
+import java.util.Objects;
 import java.util.Set;
 
 public final class GoogleDriveDownloader extends AbstractDirectLinkFileDownloader {
@@ -38,19 +42,23 @@ public final class GoogleDriveDownloader extends AbstractDirectLinkFileDownloade
     private static final int FOLDER_CHILD_PAGE_SIZE = 50;
 
 
-    public static String credentialsFilePath = "/credentials.json";
-    public static String tokensDirectoryPath = "tokens";
-    public final Drive service;
+    public String credentialsFilePath = "/gdrive_credentials.json";
+    public String tokensDirectoryPath = "tokens";
+    private Drive service;
 
     public GoogleDriveDownloader(int timeoutSeconds) throws GeneralSecurityException, IOException {
         super(timeoutSeconds);
+        this.generateService();
+    }
+
+    private void generateService() throws GeneralSecurityException, IOException {
         final NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
         this.service = new Drive.Builder(transport, JSON_FACTORY, getCredentials(transport))
             .setApplicationName(RedditClient.USER_AGENT)
             .build();
     }
 
-    private static Credential getCredentials(final NetHttpTransport httpTransport) throws IOException {
+    private Credential getCredentials(final NetHttpTransport httpTransport) throws IOException {
         InputStream in = GoogleDriveDownloader.class.getResourceAsStream(credentialsFilePath);
         if (in == null) {
             throw new FileNotFoundException("Resource not found: " + credentialsFilePath);
@@ -160,7 +168,29 @@ public final class GoogleDriveDownloader extends AbstractDirectLinkFileDownloade
      * @see GoogleDriveDownloader#getFileTreeRoot(String)
      */
     public @NotNull AbstractFileNode getFileTreeRootById(@NotNull String id) throws IOException {
-        File root = service.files().get(id).setFields("id,name,mimeType,webContentLink").execute();
+        // TODO: test
+        @NotNull File root;
+
+        try {
+            root = service.files().get(id).setFields("id,name,mimeType,webContentLink").execute();
+        } catch (TokenResponseException e) {
+            final int statusCode = e.getStatusCode();
+            System.out.println("HERE: " + statusCode);
+            if (statusCode == 400 || statusCode == 401) { // 400/401, try to have user login again by clearing cached tokens
+                e.printStackTrace(System.out);
+                try {
+                    FileUtils.delete(Path.of(tokensDirectoryPath));
+                    generateService();
+                } catch (GeneralSecurityException generalSecurityException) {
+                    throw new IOException(e);
+                }
+                root = service.files().get(id).setFields("id,name,mimeType,webContentLink").execute();
+            } else {
+                throw e;
+            }
+        }
+
+        Objects.requireNonNull(root);
 
         return getNodeForFileOrFolder(root);
     }
