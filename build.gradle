@@ -1,0 +1,34 @@
+plugins {
+    id "application"
+}
+apply plugin : "java"
+
+ext {
+    javaMainClass = "com.github.a2435191.download_musical_scores.Main"
+}
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // https://mvnrepository.com/artifact/org.json/json
+    implementation 'org.json:json:20220320'
+    implementation 'org.jetbrains:annotations:23.0.0'
+    // https://mvnrepository.com/artifact/commons-validator/commons-validator
+    implementation 'commons-validator:commons-validator:1.7'
+    // jsoup HTML parser library @ https://jsoup.org/
+    implementation 'org.jsoup:jsoup:1.14.3'
+
+
+    implementation 'com.google.apis:google-api-services-drive:v3-rev197-1.25.0'
+    implementation 'com.google.api-client:google-api-client:1.35.1'
+    implementation 'com.google.oauth-client:google-oauth-client-jetty:1.34.1'
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20211107-1.32.1'
+
+}
+
+application {
+    mainClassName = javaMainClass
+}
