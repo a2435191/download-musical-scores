@@ -1,17 +1,5 @@
 package com.github.a2435191.download_musical_scores.downloaders.implementations;
 
-import com.dropbox.core.DbxDownloader;
-import com.dropbox.core.DbxException;
-import com.dropbox.core.DbxRequestConfig;
-import com.dropbox.core.http.HttpRequestor;
-import com.dropbox.core.oauth.DbxRefreshResult;
-import com.dropbox.core.v2.DbxAppClientV2;
-import com.dropbox.core.v2.DbxClientV2;
-import com.dropbox.core.v2.DbxRawClientV2;
-import com.dropbox.core.v2.common.PathRoot;
-import com.dropbox.core.v2.files.DbxUserFilesRequests;
-import com.dropbox.core.v2.files.DownloadErrorException;
-import com.dropbox.core.v2.files.FileMetadata;
 import com.github.a2435191.download_musical_scores.downloaders.AbstractFileDownloader;
 import com.github.a2435191.download_musical_scores.filetree.AbstractFileNode;
 import com.github.a2435191.download_musical_scores.filetree.URLFileNode;
