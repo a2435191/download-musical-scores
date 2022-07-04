@@ -1,6 +1,7 @@
 package com.github.a2435191.download_musical_scores.reddit;
 
 import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
+import com.github.a2435191.download_musical_scores.util.HttpUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,7 +36,7 @@ public final class RedditClient {
      */
     public static @NotNull String getPostHTML(String id, String subredditName) throws BadRequestStatusException {
         // TODO: use official Reddit API to submit multiple ids?
-        String queryParams = RedditAuth.urlEncode(Map.of("raw_json", 1), List.of());
+        String queryParams = HttpUtils.urlEncode(Map.of("raw_json", 1), List.of());
         URI aboutURL = URI.create(String.format(URL_FORMAT_STRING, subredditName, id) + "?" + queryParams);
 
         HttpClient client = HttpClient.newHttpClient();
