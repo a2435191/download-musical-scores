@@ -1,30 +1,38 @@
 package com.github.a2435191.download_musical_scores;
 
 
-import com.github.a2435191.download_musical_scores.downloaders.implementations.DropboxDownloader;
-import com.github.a2435191.download_musical_scores.downloaders.implementations.GoogleDriveDownloader;
 import com.github.a2435191.download_musical_scores.reddit.RedditPostInfo;
 import com.github.a2435191.download_musical_scores.reddit.SubredditStream;
 import com.github.a2435191.download_musical_scores.util.BadRequestStatusException;
 import com.github.a2435191.download_musical_scores.util.FileUtils;
 import com.github.a2435191.download_musical_scores.util.JobsQueue;
-import com.google.api.client.auth.oauth2.StoredCredential;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
 
 public final class Main {
 
 
     private static final String SUBMISSION_PREFIX = "[SUBMISSION]";
+
+
+
 
     private static void sleep(long millis) {
         try {
@@ -67,27 +75,59 @@ public final class Main {
     }
 
     private static void zip(String url, Path targetPath) {
-        System.out.println("zipping " + url);
-        Path zipDownloadPath = Path.of(targetPath + ".zip");
         if (!Files.exists(targetPath)) {
             return;
         }
-        try {
-            FileUtils.zipDirectory(targetPath, zipDownloadPath);
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-        } finally {
+        System.out.println("zipping " + url);
+        Path zipDownloadPath = Path.of(targetPath + ".zip");
             try {
-                if (targetPath.toFile().exists()) {
-                    FileUtils.delete(targetPath);
-                }
+                FileUtils.zipDirectory(targetPath, zipDownloadPath);
             } catch (IOException e) {
-                e.printStackTrace();
+                e.printStackTrace(System.err);
+            } finally {
+                try {
+                    if (targetPath.toFile().exists()) {
+                        FileUtils.delete(targetPath);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+    }
+
+
+
+    private static boolean getOverwriteFromFile(File csvFile, String id, int linkIndex) throws IOException {
+        return false;
+    }
+
+    public static void downloadAll(
+        @NotNull String subredditName,
+        @NotNull Path downloadDir,
+        @NotNull Predicate<@Nullable PersistentDownloadData> overwritePredicate,
+        @NotNull BiPredicate<@NotNull RedditPostInfo, @NotNull Integer> zipPredicate,
+        @NotNull File persistentDataCSV,
+        @NotNull ConcurrentLinkedQueue<@NotNull PersistentDownloadData> outData)
+    {
+        try {
+            downloadAll(subredditName, downloadDir, overwritePredicate, zipPredicate,
+                PersistentDownloadData.fromCSV(persistentDataCSV),
+                outData);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public static void downloadAll(boolean zip, @NotNull String subredditName, Path downloadDir) {
+
+
+    public static void downloadAll(
+        @NotNull String subredditName,
+        @NotNull Path downloadDir,
+        @NotNull Predicate<@Nullable PersistentDownloadData> overwritePredicate,
+        @NotNull BiPredicate<@NotNull RedditPostInfo, @NotNull Integer> zipPredicate,
+        @NotNull Map<Map.Entry<@NotNull String, @NotNull Integer>, @NotNull PersistentDownloadData> persistentDownloadDataMap,
+        @NotNull ConcurrentLinkedQueue<@NotNull PersistentDownloadData> outData)
+    {
         MusicalScoresDownloader downloader = new MusicalScoresDownloader();
         SubredditStream stream = new SubredditStream(subredditName);
 
@@ -106,24 +146,51 @@ public final class Main {
             .takeWhile($ -> !stream.isDone())
             .filter(Objects::nonNull)
             .flatMap(Stream::of)
-            //.limit(100)
-            ; // TODO: remember to remove this
+            .limit(10)
+            ;
 
 
         JobsQueue<Void> queue = new JobsQueue<>(15);
         infoStream.forEach(info -> {
             final String escapedTitle = escapeTitle(info.title());
-            for (String url : info.scoreURLs()) {
+            for (int linkNumber = 0; linkNumber < info.scoreURLs().length; linkNumber++) {
+                String url = info.scoreURLs()[linkNumber];
                 Path targetPath = downloadDir.resolve(escapedTitle);
+
+                @Nullable PersistentDownloadData persistentDownloadData =
+                    persistentDownloadDataMap.get(Map.entry(info.id(), linkNumber));
+
+                final boolean overwrite = overwritePredicate.test(persistentDownloadData);
+                final boolean zip = zipPredicate.test(info, linkNumber);
+
+                final int tmp = linkNumber;
+
 
                 System.out.println("downloading " + info.title() + " at " + url);
                 Supplier<CompletableFuture<Void>> futureSupplier = () -> {
-                    CompletableFuture<Void> future = CompletableFuture.runAsync(
-                        () -> download(downloader, url, targetPath)
-                    );
-                    if (zip) {
-                        future = future.thenRunAsync(() -> zip(url, targetPath));
+                    CompletableFuture<Void> future;
+                    if (overwrite && Files.exists(targetPath)) {
+                        future = CompletableFuture.runAsync(() -> {});
+                    } else {
+                        future = CompletableFuture.runAsync(() -> {
+                            download(downloader, url, targetPath);
+                            outData.add(
+                                new PersistentDownloadData(info.id(), targetPath, tmp, // TODO confirm targetPath is always right
+                                    URI.create(url), LocalDateTime.now(), false)
+                            );
+                        });
                     }
+
+                    if (zip && (!overwrite || !Files.exists(Path.of(targetPath + ".zip")))) {
+                        future = future.thenRunAsync(() -> {
+                            zip(url, targetPath);
+                            outData.add(
+                                new PersistentDownloadData(info.id(), Path.of(targetPath + ".zip"), tmp,
+                                    URI.create(url), LocalDateTime.now(), false)
+                            );
+                        });
+                    }
+
                     return future;
                 };
                 queue.add(futureSupplier, url);
@@ -137,7 +204,17 @@ public final class Main {
 
 
     public static void main(String[] args) throws Throwable {
-        downloadAll(true, "MusicalScores", Path.of("downloads"));
+        var map = PersistentDownloadData.fromCSV(new File("downloads.csv"));
+        ConcurrentLinkedQueue<PersistentDownloadData> list = new ConcurrentLinkedQueue<>();
+        downloadAll(
+            "MusicalScores",
+            Path.of("downloads2"),
+            persistentDownloadData -> persistentDownloadData == null || persistentDownloadData.overwrite(),
+            (info, i) -> true,
+            new File("downloads.csv"),
+            list
+        );
+        System.out.println(list);
     }
 
 
