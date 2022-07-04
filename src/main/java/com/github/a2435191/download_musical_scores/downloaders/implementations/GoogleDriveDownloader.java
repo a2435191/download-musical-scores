@@ -36,7 +36,7 @@ import java.util.Set;
 
 public final class GoogleDriveDownloader extends AbstractDirectLinkFileDownloader {
     public static final String DEFAULT_CREDENTIALS_PATH = "/gdrive_credentials.json";
-    public static final String DEFAULT_TOKENS_PATH = "/gdrive_credentials.json";
+    public static final String DEFAULT_TOKENS_PATH = "tokens/";
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final Set<String> SCOPES = Set.of(DriveScopes.DRIVE_METADATA_READONLY);
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
