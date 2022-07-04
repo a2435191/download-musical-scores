@@ -1,10 +1,9 @@
 package com.github.a2435191.download_musical_scores;
 
 import com.opencsv.CSVReader;
-import org.apache.commons.lang3.tuple.Pair;
+import com.opencsv.exceptions.CsvValidationException;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileReader;
@@ -13,10 +12,8 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * Record representing a row of a download information file.
@@ -75,7 +72,11 @@ public record PersistentDownloadData(
     public static @NotNull Map<Map.Entry<@NotNull String, @NotNull Integer>, @NotNull PersistentDownloadData> fromCSV(
         @NotNull File csvFile) throws IOException {
         try (CSVReader reader = new CSVReader(new FileReader(csvFile))) {
-            reader.readNext(); // discard header
+            try {
+                reader.readNext(); // discard header
+            } catch (CsvValidationException ex) {
+                throw new RuntimeException(ex);
+            }
             final HashMap<Map.Entry<String, Integer>, PersistentDownloadData> out = new HashMap<>();
             reader.forEach(args -> {
                 PersistentDownloadData data = PersistentDownloadData.create(args);
@@ -92,10 +93,11 @@ public record PersistentDownloadData(
 
     /**
      * Convert this into a row suitable for a CSV.
+     *
      * @return An array of 6 strings. See
      * {@link PersistentDownloadData#PersistentDownloadData(String, Path, int, URI, LocalDateTime, boolean)}}
      * for what each element means.
-     *
+     * <p>
      * It is guaranteed that <code>create(args).toCsvRow().equals(args)</code>.
      */
     @Contract(pure = true)

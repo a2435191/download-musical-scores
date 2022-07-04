@@ -4,7 +4,7 @@ plugins {
 apply plugin : "java"
 
 ext {
-    javaMainClass = "com.github.a2435191.download_musical_scores.Main"
+    javaMainClass = "com.github.a2435191.download_musical_scores.Main" as Object
 }
 
 
@@ -28,7 +28,7 @@ dependencies {
     implementation 'com.google.apis:google-api-services-drive:v3-rev20211107-1.32.1'
 
     // https://mvnrepository.com/artifact/com.opencsv/opencsv
-    implementation 'com.opencsv:opencsv:3.7'
+    implementation 'com.opencsv:opencsv:5.6'
 
 
 }
