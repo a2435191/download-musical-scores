@@ -1,4 +1,5 @@
-This is a histogram of sorts that I generated early in testing. It provides a decent overview of the frequencies at which different download interfaces are used, and helped me prioritize which ones I should tackle first (or at all).
+This is a histogram of sorts that I generated early in testing. It provides a decent overview of the frequencies at
+which different download interfaces are used, and helped me prioritize which ones I should tackle first (or at all).
 
 | domain                    | frequency | implementation                   |
 |---------------------------|-----------|----------------------------------|

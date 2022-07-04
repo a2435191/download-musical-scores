@@ -53,6 +53,8 @@ public final class JobsQueue<T> {
         Supplier<CompletableFutureReferenceWrapper> wrappedSupplier = () -> {
             CompletableFutureReferenceWrapper wrapper = new CompletableFutureReferenceWrapper(null, name);
             CompletableFuture<T> originalFuture = completableFutureSupplier.get();
+
+            @SuppressWarnings("UnnecessaryLocalVariable")
             CompletableFuture<Void> wrappedFuture = originalFuture
                 .exceptionally(ex -> {
                     recycleQueue(wrapper, null);
@@ -118,9 +120,12 @@ public final class JobsQueue<T> {
 
     private static class CompletableFutureReferenceWrapper {
         @Nullable CompletableFuture<Void> future;
+
+        @SuppressWarnings("CanBeFinal")
         @Nullable String name;
 
-        CompletableFutureReferenceWrapper(@Nullable CompletableFuture<Void> future, @Nullable String name) {
+
+        CompletableFutureReferenceWrapper(@SuppressWarnings("SameParameterValue") @Nullable CompletableFuture<Void> future, @Nullable String name) {
             this.future = future;
             this.name = name;
         }

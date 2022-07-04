@@ -25,8 +25,8 @@ public abstract class AbstractFileNodeStreamDownloader extends AbstractFileNode 
      * In the case of downloader implementations dealing with folder structure,
      * if this.isFolder(), FileInfo::data() should be empty (no download)
      *
-     * @return
-     * @throws IOException
+     * @return {@link FileInfo} representing the data and filename of the downloaded file.
+     * @throws IOException if the file cannot be downloaded.
      */
     protected abstract @NotNull FileInfo download() throws IOException;
 

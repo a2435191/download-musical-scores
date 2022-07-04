@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * @param timestamp     Unix timestamp of post creation
  * @param redditURLPath The URL to the post
  * @param scoreURLs     Score URLs extracted from the post.
- *                      See {@link URLTextExtractor#extractURLsFromRedditPost(JSONObject, boolean)}.
+ *                      See {@link URLTextExtractor#extractURLsFromRedditPost(JSONObject, String, boolean)}.
  */
 public record RedditPostInfo(String id, long timestamp, String redditURLPath, String title, String[] scoreURLs,
                              Map<String, ?> otherData) {

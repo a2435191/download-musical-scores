@@ -40,7 +40,7 @@ public abstract class AbstractFileDownloader {
 
 
         @Contract(value = "_ -> this", mutates = "this")
-        public @NotNull DownloaderManager addGoogleDriveDownloader(int timeoutSeconds) throws GeneralSecurityException, IOException {
+        public @NotNull DownloaderManager addGoogleDriveDownloader(int timeoutSeconds) {
             this.put(() -> {
                 try {
                     return new GoogleDriveDownloader(timeoutSeconds);
@@ -80,13 +80,7 @@ public abstract class AbstractFileDownloader {
 
         @Contract(value = "-> this", mutates = "this")
         public @NotNull DownloaderManager addDropboxDownloader() {
-            this.put(() -> {
-                try {
-                    return new DropboxDownloader();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }, "1drv.ms", "dropbox.com");
+            this.put(DropboxDownloader::new, "1drv.ms", "dropbox.com");
             return this;
         }
 

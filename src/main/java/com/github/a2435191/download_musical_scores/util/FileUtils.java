@@ -68,9 +68,7 @@ public final class FileUtils {
 
     }
 
-    public static void serialize(Object obj, @NotNull File file)
-        throws IOException
-    {
+    public static void serialize(Object obj, @NotNull File file) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(file);
              ObjectOutputStream out = new ObjectOutputStream(fos)) {
             out.writeObject(obj);
@@ -94,6 +92,7 @@ public final class FileUtils {
         @Override
         FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException;
 
+        @SuppressWarnings("RedundantThrows")
         @Override
         default FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
             return FileVisitResult.CONTINUE;

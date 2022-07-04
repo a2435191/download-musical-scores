@@ -35,46 +35,31 @@ import java.util.Objects;
 import java.util.Set;
 
 public final class GoogleDriveDownloader extends AbstractDirectLinkFileDownloader {
+    public static final String DEFAULT_CREDENTIALS_PATH = "/gdrive_credentials.json";
+    public static final String DEFAULT_TOKENS_PATH = "/gdrive_credentials.json";
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final Set<String> SCOPES = Set.of(DriveScopes.DRIVE_METADATA_READONLY);
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
     private static final String SHORTCUT_MIME_TYPE = "application/vnd.google-apps.shortcut";
     private static final int FOLDER_CHILD_PAGE_SIZE = 50;
-
-
-    public String credentialsFilePath = "/gdrive_credentials.json";
-    public String tokensDirectoryPath = "tokens";
+    private final String credentialsPath;
+    private final String tokensDirectoryPath;
     private Drive service;
 
     public GoogleDriveDownloader(int timeoutSeconds) throws GeneralSecurityException, IOException {
         super(timeoutSeconds);
+        this.credentialsPath = DEFAULT_CREDENTIALS_PATH;
+        this.tokensDirectoryPath = DEFAULT_TOKENS_PATH;
         this.generateService();
     }
 
-    private void generateService() throws GeneralSecurityException, IOException {
-        final NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
-        this.service = new Drive.Builder(transport, JSON_FACTORY, getCredentials(transport))
-            .setApplicationName(RedditClient.USER_AGENT)
-            .build();
+
+    public GoogleDriveDownloader(int timeoutSeconds, String credentialsPath, String tokensDirectoryPath) throws GeneralSecurityException, IOException {
+        super(timeoutSeconds);
+        this.credentialsPath = credentialsPath;
+        this.tokensDirectoryPath = tokensDirectoryPath;
+        this.generateService();
     }
-
-    private Credential getCredentials(final NetHttpTransport httpTransport) throws IOException {
-        InputStream in = GoogleDriveDownloader.class.getResourceAsStream(credentialsFilePath);
-        if (in == null) {
-            throw new FileNotFoundException("Resource not found: " + credentialsFilePath);
-        }
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-            httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
-            .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(tokensDirectoryPath)))
-            .setAccessType("offline")
-            .build();
-
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(-1).build();
-        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-    }
-
 
     private static void throwExceptionOnMissingField(
         @NotNull String fieldName,
@@ -93,6 +78,30 @@ public final class GoogleDriveDownloader extends AbstractDirectLinkFileDownloade
         }
         String[] urlPaths = path.split("/");
         return urlPaths[2]; // whether /file/d/<id> or /drive/folders/<id>, we index at 2
+    }
+
+    private void generateService() throws GeneralSecurityException, IOException {
+        final NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
+        this.service = new Drive.Builder(transport, JSON_FACTORY, getCredentials(transport))
+            .setApplicationName(RedditClient.USER_AGENT)
+            .build();
+    }
+
+    private Credential getCredentials(final NetHttpTransport httpTransport) throws IOException {
+        InputStream in = GoogleDriveDownloader.class.getResourceAsStream(credentialsPath);
+        if (in == null) {
+            throw new FileNotFoundException("Resource not found: " + credentialsPath);
+        }
+        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+
+        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+            httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
+            .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(tokensDirectoryPath)))
+            .setAccessType("offline")
+            .build();
+
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(-1).build();
+        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
     /**

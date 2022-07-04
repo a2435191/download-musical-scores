@@ -9,17 +9,14 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
 
-import javax.swing.text.html.Option;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +28,7 @@ public class DropboxDownloader extends AbstractFileDownloader {
     private static final Pattern FILENAME_REGEX = Pattern.compile("filename=\"(.+)\";");
 
 
-    public DropboxDownloader() throws IOException {
+    public DropboxDownloader() {
         super();
     }
 
@@ -74,7 +71,7 @@ public class DropboxDownloader extends AbstractFileDownloader {
 
 
     @Override
-    public @NotNull AbstractFileNode getFileTreeRoot(@NotNull String url) throws IOException {
+    public @NotNull AbstractFileNode getFileTreeRoot(@NotNull String url) {
         final URI downloadURL = setDownloadParamToOne(URI.create(url));
         final HttpRequest request = HttpRequest.newBuilder()
             .GET()
