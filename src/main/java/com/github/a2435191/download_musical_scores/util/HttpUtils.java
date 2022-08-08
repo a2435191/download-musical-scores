@@ -13,6 +13,6 @@ public final class HttpUtils {
             .stream()
             .map(pair -> "" + pair.getKey() + "=" + pair.getValue())
             .collect(Collectors.joining("&")) +
-                        list.stream().map(Object::toString).collect(Collectors.joining("&"));
+                   list.stream().map(Object::toString).collect(Collectors.joining("&"));
     }
 }

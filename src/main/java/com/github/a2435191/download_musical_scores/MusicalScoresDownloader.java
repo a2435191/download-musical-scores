@@ -15,13 +15,10 @@ import javax.annotation.concurrent.ThreadSafe;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiPredicate;
@@ -34,13 +31,16 @@ public final class MusicalScoresDownloader {
     private static final String SUBMISSION_PREFIX = "[SUBMISSION]";
     public final @NotNull ConcurrentLinkedQueue<@NotNull PersistentDownloadData> outData
         = new ConcurrentLinkedQueue<>();
-    private final AbstractFileDownloader.DownloaderManager manager;
-    private final @NotNull String subredditName;
-    private final @NotNull Path downloadDir;
-    private final @NotNull Predicate<@Nullable PersistentDownloadData> overwritePredicate;
-    private final @NotNull BiPredicate<@NotNull RedditPostInfo, @NotNull Integer> zipPredicate;
-    private final @NotNull Map<Map.Entry<@NotNull String, @NotNull Integer>, @NotNull PersistentDownloadData>
+    public final AbstractFileDownloader.DownloaderManager manager;
+    public final @NotNull String subredditName;
+    public final @NotNull Path downloadDir;
+    public final @NotNull Predicate<@Nullable PersistentDownloadData> overwritePredicate;
+    public final @NotNull BiPredicate<@NotNull RedditPostInfo, @NotNull Integer> zipPredicate;
+    public final @NotNull Map<Map.Entry<@NotNull String, @NotNull Integer>, @NotNull PersistentDownloadData>
         persistentDownloadDataMap;
+
+    private final @NotNull Map<@NotNull String, @NotNull Integer> redditIDCounter
+        = new HashMap<>();
 
 
     public MusicalScoresDownloader(@NotNull String subredditName,
@@ -61,7 +61,7 @@ public final class MusicalScoresDownloader {
             throw new RuntimeException(e);
         }
 
-        this.overwritePredicate = data -> data == null || data.overwrite();
+        this.overwritePredicate = data -> data != null && data.overwrite();
         this.zipPredicate = (info, idx) -> false;
         this.subredditName = subredditName;
         this.downloadDir = downloadDir;
@@ -118,7 +118,7 @@ public final class MusicalScoresDownloader {
     }
 
 
-    private static void sleep(@SuppressWarnings("SameParameterValue") long millis) {
+    static void sleep(@SuppressWarnings("SameParameterValue") long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
@@ -139,13 +139,12 @@ public final class MusicalScoresDownloader {
         );
     }
 
+
     public void downloadAndDeleteOnExceptions(String url, Path targetPath) {
         try {
             download(url, targetPath);
-        } catch (FileAlreadyExistsException e) {
-            System.out.println("Path" + targetPath + " already exists!");
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
+        } catch (Exception | AssertionError e) {
+            e.printStackTrace();
             System.out.println("deleting " + targetPath + " for " + url);
             if (targetPath.toFile().exists()) {
                 try {
@@ -154,16 +153,18 @@ public final class MusicalScoresDownloader {
                     throw new RuntimeException("failed to delete " + targetPath, ex);
                 }
             }
+            throw new RuntimeException(e);
         }
+
     }
 
     public void download(@NotNull String url, @NotNull Path parentDir) throws IOException {
+
         final AbstractFileDownloader downloader = this.manager.getInstanceFromUrl(URI.create(url)); // threadsafe so ok
 
         if (downloader == null) {
             throw new RuntimeException("no downloader found for url " + url + "!");
         }
-
 
         AbstractFileNode root = downloader.getFileTreeRoot(url);
         Stack<NodeAndPath> stack = new Stack<>();
@@ -183,8 +184,14 @@ public final class MusicalScoresDownloader {
         }
     }
 
+    public @NotNull JobsQueue<Void> downloadAll(int batchSize, int skip, int limit) {
+        return downloadAll(batchSize, skip, limit, (info, idx) -> true);
+    }
 
-    public void downloadAll(int batchSize, boolean wait) {
+    public @NotNull JobsQueue<Void> downloadAll(int batchSize, int skip, int limit, BiPredicate<RedditPostInfo, Integer> filter) {
+        System.out.println("called downloadAll");
+        final List<Map.Entry<CompletableFuture<Void>, String>> out = new ArrayList<>();
+
         SubredditStream stream = new SubredditStream(subredditName);
 
         Stream<@NotNull RedditPostInfo> infoStream = Stream.generate(() -> {
@@ -201,58 +208,90 @@ public final class MusicalScoresDownloader {
             })
             .takeWhile($ -> !stream.isDone())
             .filter(Objects::nonNull)
-            .flatMap(Stream::of)
-            .limit(10);
+            .flatMap(Stream::of);
+
+
+        final Stream<DownloadUrlAndInfoStruct> downloadUrlStream = infoStream.flatMap(info -> {
+                DownloadUrlAndInfoStruct[] arr = new DownloadUrlAndInfoStruct[info.scoreURLs().length];
+                for (int linkNumber = 0; linkNumber < arr.length; linkNumber++) {
+                    System.out.println(info.scoreURLs()[linkNumber]);
+                    arr[linkNumber] = new DownloadUrlAndInfoStruct(info, linkNumber);
+                }
+                return Stream.of(arr);
+            })
+            .filter(struct -> filter.test(struct.info, struct.linkNumber))
+            .skip(skip)
+            .limit(limit >= 0 ? limit : Long.MAX_VALUE);
 
 
         JobsQueue<Void> queue = new JobsQueue<>(batchSize);
-        infoStream.forEach(info -> {
-            final String escapedTitle = escapeTitle(info.title());
-            for (int linkNumber = 0; linkNumber < info.scoreURLs().length; linkNumber++) {
-                String url = info.scoreURLs()[linkNumber];
-                Path targetPath = downloadDir.resolve(escapedTitle);
+        downloadUrlStream.forEach(struct -> {
+            final int linkNumber = struct.linkNumber;
+            final RedditPostInfo info = struct.info;
+            final String url = struct.url;
 
-                @Nullable PersistentDownloadData persistentDownloadData =
-                    persistentDownloadDataMap.get(Map.entry(info.id(), linkNumber));
+            final Path targetPath;
+            {
+                final String title = escapeTitle(info.title());
+                final int alreadyExistingFiles = this.redditIDCounter.getOrDefault(title, 0);
+                this.redditIDCounter.put(title, alreadyExistingFiles + 1);
+                final String titleSuffix = alreadyExistingFiles == 0
+                                               ? ""
+                                               : " (" + alreadyExistingFiles + ")";
+                targetPath = downloadDir.resolve(title + titleSuffix);
+            }
 
-                final boolean overwrite = overwritePredicate.test(persistentDownloadData);
-                final boolean zip = zipPredicate.test(info, linkNumber);
+            @Nullable PersistentDownloadData persistentDownloadData =
+                persistentDownloadDataMap.get(Map.entry(info.id(), linkNumber));
+
+            final boolean overwrite = overwritePredicate.test(persistentDownloadData);
+            final boolean zip = zipPredicate.test(info, linkNumber);
 
 
-                System.out.println("downloading " + info.title() + " at " + url);
+            System.out.println("downloading " + info.title() + " at " + url);
 
-                final int finalLinkNumber = linkNumber;
-                Supplier<CompletableFuture<Void>> futureSupplier = () -> {
-                    final CompletableFuture<Void> future;
-                    if (overwrite && Files.exists(targetPath)) {
-                        return CompletableFuture.runAsync(() -> {
-                        });
-                    } else {
-                        future = CompletableFuture.runAsync(() ->
-                                                                this.downloadAndDeleteOnExceptions(url, targetPath));
-                    }
+            Supplier<CompletableFuture<Void>> futureSupplier = () -> {
+                final CompletableFuture<Void> future;
+                if (overwrite && Files.exists(targetPath)) {
+                    return CompletableFuture.runAsync(() -> {
+                    });
+                } else {
+                    future = CompletableFuture.runAsync(() -> this.downloadAndDeleteOnExceptions(url, targetPath));
+                }
 
-                    // can't or won't zip
-                    if (!zip || (overwrite && Files.exists(Path.of(targetPath + ".zip")))) {
-                        return future.thenRunAsync(() -> outData.add(createPersistentDataToBeSaved(
-                            info.id(), false, targetPath, finalLinkNumber, url)));
-                    }
 
-                    // zip
-                    return future.thenRunAsync(() -> {
+                // can't or won't zip
+                if (!zip || (overwrite && Files.exists(Path.of(targetPath + ".zip")))) {
+                    return future.whenCompleteAsync((res, ex) -> {
+                            if (ex == null) {
+                                outData.add(createPersistentDataToBeSaved(
+                                    info.id(), false, targetPath, linkNumber, url)
+                                );
+                            }
+                        }
+                    );
+                }
+
+                // zip
+                return future.whenCompleteAsync((res, ex) -> {
+                    if (ex == null) {
                         zipAndDeleteOnExceptions(targetPath);
                         outData.add(createPersistentDataToBeSaved(
-                            info.id(), true, targetPath, finalLinkNumber, url));
-                    });
-                };
+                            info.id(), true, targetPath, linkNumber, url));
+                    }
+                });
+            };
 
-                queue.add(futureSupplier, url);
-            }
+
+            queue.add(futureSupplier, url);
         });
+        return queue;
+    }
 
-        if (wait)
-            queue.joinAll();
-
+    private record DownloadUrlAndInfoStruct(RedditPostInfo info, int linkNumber, String url) {
+        public DownloadUrlAndInfoStruct(RedditPostInfo info, int linkNumber) {
+            this(info, linkNumber, info.scoreURLs()[linkNumber]);
+        }
     }
 
     // downloadDir is parent dir for download into

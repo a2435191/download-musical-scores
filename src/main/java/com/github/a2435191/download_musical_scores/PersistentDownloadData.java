@@ -35,6 +35,9 @@ public record PersistentDownloadData(
     @NotNull LocalDateTime downloadTimestamp,
     boolean overwrite) {
 
+    public static final String[] FIELDS = new String[]{
+        "redditID", "saveLocation", "linkNumber", "url", "downloadTimestamp", "overwrite"
+    };
     private static final @NotNull DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     /**

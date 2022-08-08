@@ -90,7 +90,7 @@ public class DropboxDownloader extends AbstractFileDownloader {
 
                 Optional<String> contentDisposition = response.headers().firstValue("content-disposition");
                 if (contentDisposition.isEmpty()) {
-                    throw new NullPointerException();
+                    throw new RuntimeException("Content disposition is empty!");
                 }
 
                 Matcher matcher = FILENAME_REGEX.matcher(contentDisposition.get());

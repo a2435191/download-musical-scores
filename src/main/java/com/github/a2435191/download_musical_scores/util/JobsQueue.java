@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 
@@ -79,6 +80,7 @@ public final class JobsQueue<T> {
      * Wait for all running and waiting futures to complete before returning.
      */
     public void joinAll() {
+        System.out.println("called joinAll");
         // not only must we join all futures in running, we must wait for those in waiting to trickle out as well
         while (true) {
             final boolean breakFlag;
@@ -93,7 +95,11 @@ public final class JobsQueue<T> {
 
             for (CompletableFutureReferenceWrapper wrapper : wrappers) {
                 assert wrapper.future != null;
-                wrapper.future.join();
+                try {
+                    wrapper.future.join();
+                } catch (CompletionException e) {
+                    e.printStackTrace();
+                }
             }
 
             if (breakFlag) {
